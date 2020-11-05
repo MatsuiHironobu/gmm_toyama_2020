@@ -1,0 +1,556 @@
+---
+title: "R言語を利用した京都系土師器皿の研究"
+author: "松井　広信（富山県埋蔵文化財センター）"
+date: "11/8/2020"
+output: ioslides_presentation
+bibliography: mylib.bib
+csl: sist02-japanese_変更.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(Momocs)
+library(DT)
+load("./R言語を利用した京都系土師器皿の研究.RData")
+```
+
+# 序論：京都系土師器皿とは
+
+## 京都系土師器皿の定義
+
+　石川県における研究を参考にすると、京都系土師器皿は次のように定義される[@iwase_2019]。基本的に富山県でも同様である。武家儀礼（式三献等）・祭祀（地鎮等）・宴会・灯火具など、様々な用途で使用された。
+
+- 手づくねで、京都の土師器の形態・調整を模倣したもの
+
+- 体部は緩やかに開き、口縁端部をつまみ上げる、または体部内面にヨコナデによる面を形成する。外面は口縁部付近のみをヨコナデする。
+
+- 内面調整の結果、内底面に凸圏線や凹線が観察される個体がある。内面調整は小型品に「の」字状ナデ、中型品以上に「2」字状ナデを施すものがある。
+
+## 富山県の中世後期の土師器皿
+
+- 15世紀後半から16世紀の富山県では、京都系土師器皿（TI）が広く使われ、その影響を受けた型式（TJ・RF・RH）もある。石川県や福井県、新潟県とは様相が異なる。
+
+- TIは石名田木舟遺跡や富山城跡など城館遺跡で出土。15世紀後半から増加し、16世紀後半まで残る型式とされる[@takanashi_2006]。
+
+- TJは手づくね製でRF・RH・TIと共伴。仏生寺城跡の落城遺構でまとまって出土。RFやTIが主体となる資料（未報告）があり時期差を反映？中世土師器皿としては最も遅くまで残る型式とされる[@takanashi_2006]。
+
+- RF・RHはロクロ製で、井口城跡、阿尾島尾A遺跡でまとまって出土。富山市・舟橋村でも出土し、友坂遺跡のものは井口城跡と類似。仏生寺城跡の資料は胎土・法量が異なる。
+
+## 分類
+
+```{r echo=FALSE, r,out.width='700pixel'}
+knitr::include_graphics(path = "./fig/1中世土師器皿の分類.png")
+```
+
+- R=ロクロ、T=手づくね
+- 戦国期の土師器皿はRF・RH・TI・TJ。京都系土師器皿はTI
+
+## 分布
+
+```{r echo=FALSE,out.width='550pixel'}
+knitr::include_graphics(path = "./fig/2分布図.png")
+```
+
+## 主な先行研究
+
+- 梅原胡摩堂遺跡で「調整」の報告。の字ナデと2字ナデの把握。京都系土師器皿（報告書；NJ類）の出土が少ない。
+
+- 中世土師器皿の型式は高梨[@takanashi_2006]、越前・高梨[@echizen_takanashi_2007]が整理（富山県の京都系土師器皿の研究のベースになる）
+
+- 「形」に着目した研究[@mori_2003]。土師器皿の「系統」に着目。断面の形が細分が根拠か？系統関係にも疑問あり。
+
+## 方法
+
+-   富山県の中世土師器皿「調整」に基づく考古学的分析し、系統関係を整理する。
+
+-   Rのパッケージtidyverseを利用した口径分布。口径と「調整」の変化を具体的に把握する。
+
+-   Rのパッケージmomocsを利用した幾何学的形態分析。曖昧な断面の「形」を統計的に把握し、個別ではなく全体としての傾向を把握
+
+# 考古学的な観察[@matsui_2019]
+## 京都系土師器皿（TI）の調整
+
+- TIの小型品の調整は、**体部：2字ナデ（SD7030）・の字ナデ（SD7003）→見込：指ナデ→口縁：横ナデ**で、遺構によって調整が異なる。
+
+- 小型品の２字ナデは体部をナデ回した後、一旦止めて上へ跳ね上げており、中大型品の２字ナデとは少し異なる。
+
+- 遺構の関係からSD7003が後出。SD7030から長享２年（1488）銘棟札が出土。
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/3石名田木舟遺跡（スライド）.png")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/4-1_石名田木舟SD7030_4780_DSC_4633.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/4-2_石名田木舟SD7030_4789_DSC_4650.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/4-3_石名田木舟SD7003_4464_DSC_4674.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/4-4_石名田木舟SD7003_4502_DSC_4668.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/4-5_石名田木舟SD7030_4917_DSC_4664.jpg")
+```
+
+---
+
+- 富山城跡レガートスクエア地区のTIの小型品で主体となるのは、**見込：無調整（一方向ナデ）→体部：の字ナデ（小型品）→口縁：横ナデ**。
+
+- 見込の指ナデを省略していることから、石名田木舟遺跡よりも後出と考えられる。
+
+- 時期差か、地域差か・・・？
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/5富山城跡（スライド）.png")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/6-1_富山城跡582_DSC_2670.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/6-2_富山城跡458_DSC_2750.jpg")
+```
+
+
+## その他の中世土師器皿の調整
+
+- TJの調整は**見込：一方向ナデ→体部・口縁：の字ナデ（横ナデ）**で、TIとは系統が異なる。
+
+- 中大型品は一方向ナデに先行して、斜行するようにナデが入り、見込と口縁部ナデの間を埋めているようにみえる。
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/7仏生寺城跡（スライド）.png")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/8-1_仏生寺城跡98_DSC_4619.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/8-2_仏生寺城跡96_DSC_4624.jpg")
+```
+
+---
+
+- RF・RHはロクロ成形。RFの底部には糸切痕が残る。
+
+- RHの底部には糸切痕を削ったような痕跡が見られ、京都系土師器皿を模倣した結果とされる[@miyata_1997]。
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/9井口城跡（スライド）.png")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/10-1_井口城跡_小_DSC_4684.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/10-2_井口城跡_大_DSC_4685.jpg")
+```
+
+---
+
+- 丸塚は加賀藩士・大音主馬の墓（享年寛永13年（1636年））の墓として伝わる。
+
+- 発掘調査で40点の土師器皿が出土し、「形」から16世紀半ばの資料とされてきた。
+
+- 金沢の1630年ごろの土師器皿がまじる。享年（1636年）と近いので関係が注目される。
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/11丸塚（スライド）.png")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/12-1a丸塚4表_DSC_2617.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/12-1b丸塚4裏_DSC_2615.jpg")
+```
+
+---
+
+```{r echo=FALSE,out.width='800pixel'}
+knitr::include_graphics(path = "./fig/12-2丸塚ジ4_DSC_2621.jpg")
+```
+
+------------------------------------------------------------------------
+
+## 口径分布と調整の関係
+
+- R（後述）のパッケージtidyverseを用いて、口径分布のヒストグラムを作成。
+
+- 10cm代後半で調整に変化（小型品と中大型品の区別の基準）
+
+- 法量が4〜5に分かれる？
+
+- 石名田木舟遺跡SD7030・SD7003→富山城跡3SD54→富山城跡2SK705で小型品の口径が変化
+
+- 小型品での調整の違いが明らか。
+
+------------------------------------------------------------------------
+
+```{r echo=FALSE,out.width='600pixel'}
+knitr::include_graphics(path = "./fig/14調整パターンと口径分布.png")
+```
+
+
+
+## R言語とは
+
+-   統計処理の計算や可視化を行うプログラミング言語・環境で、**オープンソース、フリーソフト**
+-   学術研究で使用され、専門家による**パッケージ**の開発も盛ん
+-   複雑な統計処理が容易に実行でき、グラフの描写にも強い
+-   **R言語**、単に**R**と呼ぶ。今回はRstudioと呼ばれるIDE（統合開発環境）で操作する
+
+```{r,out.width='150pixel'}
+knitr::include_graphics(path = "./fig/13Rlogo.png")
+```
+
+```{r,out.width='300pixel'}
+knitr::include_graphics(path = "./fig/13Rstudiologo.png")
+```
+
+## 幾何学的形態測定学とは
+
+-   **伝統的形態測定学**
+
+　口径や器高といった距離を測定する方法の一つ。輪郭の湾曲具合等の数値化は難しく、「形」を分析する手法としては有用ではない。
+
+- **幾何学的形態測定学（GMM;geometric morphometrics）**
+
+　形態（form）から位置・向き・サイズの情報を分離し、純粋な「形」(shape)を解析する方法。標識点ベースのランドマーク法・セミランドマーク法、輪郭線ベースの楕円フーリエ法などがある。
+
+- **楕円フーリエ解析**
+
+　閉曲線である対象の輪郭を周期関数に変換し、導かれたフーリエ係数により形状を解析する。考古学への応用は、いずれも外形の輪郭を対象とし、断面を扱ったものは拙稿が初出。
+
+## 断面図を対象とした理由
+
+-   **実測図の特性**
+
+　残存率が悪い場合、実測図の外形（左側）を反転して描くことがある。断面は測点を落とし、マコやディバイダーを使用するため、外形よりも信頼できる。
+
+-   **１個体の中でも測定する場所ごとに形が異なる**
+
+　今回のような実測図そのものを使用する研究では結果に影響する可能性があるが、一括資料を採用し、その傾向をつかむことによって、ある程度問題を緩和できる。
+
+-   **使用したソフト**
+
+　楕円フーリエ解析をするにあたって、事前準備から分析まで一連で実行可能なＲパッケージのMomocs ver1.3.0を使用する。なお、分析はmacOS High Sierra ver10.13.6およびR ver4.0.0で行った。
+
+## 楕円フーリエ解析の結果
+
+- 小型品と中大型品のいずれも第一主成分が「厚さ」だった。近世の資料とわかった丸塚は、第二主成分において、中世土師器皿とは離れる傾向にある。
+
+- 石名田木舟遺跡の２遺構は大きな差異がないが、同じ遺跡の富山城跡SD54とSK705は互いに離れる傾向にある。SD54は石名田木舟遺跡に近い傾向があり、SD54→SK705と推定できる（報告書では逆）。
+
+- TJは小型品と中大型品ともに他のものから離れる傾向にある。TJと共伴するTI（仏生寺城跡）はそのほかの遺跡のTIとも異なる傾向を示す。
+
+
+------------------------------------------------------------------------
+
+```{r echo=FALSE,out.width='700pixel'}
+knitr::include_graphics(path = "./fig/15松井2019_小型品.png")
+```
+
+------------------------------------------------------------------------
+
+```{r echo=FALSE,out.width='700pixel'}
+knitr::include_graphics(path = "./fig/16松井2019_中大型品.png")
+```
+
+
+# 本論：R言語を利用した京都系土師器皿の研究
+
+## 分析対象
+
+-   京都産土師器皿は年代観に共通認識がある資料（被災資料等）を対象。1530年代の資料は**京都A-B段階**とする。京都の土師器皿にはN系統とS系統があり、京都系土師器皿とよく似たS系列を対象とし、ヘソ皿（Sh）は除外する。
+
+-   北陸の京都系土師器皿の受容を比較するため、石川県の資料も対象。七尾市の七尾城下町遺跡、七尾湾沿岸の小島西遺跡を対象とし、年代観は岩瀬[@iwase_2019]に準拠。
+
+-   富山県の資料は、石名田木舟遺跡と富山城跡レガートスクエア地区の出土量が豊富な4遺構を対象とする。年代観は松井[@matsui_2019]に準拠する。
+
+---
+
+```{r echo=FALSE}
+site_list <- read.csv('site_list.csv',header = TRUE)
+datatable(site_list,rownames=FALSE,extensions='Scroller',
+          options=list(dom = 't',
+                       scrollX = TRUE,
+                       scrollY = 500))
+```
+
+
+## 解析の手順
+
+```{r echo=FALSE,out.width='600pixel'}
+knitr::include_graphics(path = "./fig/17momocsの分析手順.png")
+```
+
+
+## 前準備
+
+```{r echo=TRUE, eval=FALSE, warning=FALSE}
+library(Momocs) #momocsを起動（未インストールの場合：install.packages()）
+```
+
+```{r echo=TRUE, eval=FALSE}
+load("R言語を利用した京都系土師器皿の研究.RData")
+```
+
+```{r ,fig.width=7,echo=TRUE, message=FALSE, warning=FALSE}
+stack(out_small) #jpgデータの一覧を表示
+```
+
+------------------------------------------------------------------------
+
+```{r echo=TRUE,eval=FALSE}
+#def_ldk(out,標識点の個数)：輪郭（out）をクリックして標識点を設定
+#coo_slide(ldk=2)：標識点2を基準に平行移動
+#fgProcrustes() ：プロクラステス重ね合わせ
+shape_small<-def_ldk(out_small,3)%>%coo_slide(ldk=2)%>%fgProcrustes() 
+stack(shape_small)
+```
+
+```{r ,fig.width=7,echo=FALSE, message=FALSE, warning=FALSE}
+stack(shape_small)
+```
+
+## 楕円フーリエ解析
+
+-   調和数を特定したのち、楕円フーリエ解析を実行。
+-   n=1だと楕円が描かれるので「楕円」フーリエと言われる。
+
+```{r echo=TRUE}
+#calibrate_harmonicpower_efourier()で適切な調和数を特定(n=16)
+#efourier()：楕円フーリエ分析
+f_small <- efourier(shape_small,nb.h=16,norm=FALSE)
+```
+
+## 主成分分析
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#第1〜3主成分までの結果を表示する。Meanは平均、SDは標準偏差。
+pca_small <- PCA(f_small)
+PCcontrib(pca_small,nax=1:3) 
+```
+
+## 「外れ値」を除外する
+
+- 可視化の際、形の再構築や点のプロットがうまく行かない時がある
+- momocsでは「外れ値」を除外する関数が用意されている（which\_out関数）
+
+```{r eval=FALSE, echo=TRUE, message=TRUE, warning=FALSE}
+#外れ値の特定
+which_out(pca_small$x[,1],0.5)
+#外れ値が赤くプロットされる
+cols <- rep("black", nrow(pca_small$x))
+outliers <- which_out(pca_small$x[, 1], 0.5)
+cols[outliers] <- "red"
+plot(pca_small, col=cols)
+```
+
+---
+
+```{r echo=FALSE, message=TRUE, warning=FALSE}
+#外れ値の特定
+which_out(pca_small$x[,1],0.5)
+#外れ値が赤くプロットされる
+cols <- rep("black", nrow(pca_small$x))
+outliers <- which_out(pca_small$x[, 1], 0.5)
+cols[outliers] <- "red"
+plot(pca_small, col=cols)
+```
+
+---
+
+```{r echo=TRUE,eval=FALSE}
+#第1・2主成分の結果を表示
+par(family = "IPAexGothic")　　　#日本語フォントの指定
+plot_PCA(pca_small2,~ERA,　　　　#主成分分析の図化
+         morphospace_position = "range",
+         axes = c(1,2),
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  #キャプションの指定
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC1vs.PC2)",
+              cex=2/3)%>%
+  #ポイントの形を変形
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=0.7)%>%
+  #グループ化
+  layer_labelgroups(cex=0.5,alpha = 0.3)%>%
+　#50%信頼楕円の描写
+  layer_ellipses(conf=0.5,lwd=1)
+```
+
+
+## 小型品の分析
+- 第一主成分：断面の厚さ、第二主成分：体部の外反具合、第三主成分：腰部の屈曲具合
+```{r echo=FALSE}
+PCcontrib(pca_small2,nax=1:3) 
+```
+
+## 第一主成分vs第二主成分
+```{r echo=FALSE}
+#第1・2主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,2),
+         zoom = 1.5,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC1vs.PC2)",cex=0.7)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=0.5)%>%
+  layer_labelgroups(cex=0.5,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+```
+
+## 第一主成分vs第三主成分
+```{r echo=FALSE}
+#第1・3主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,3),
+         zoom = 1.5,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC1vs.PC3)",cex=0.7)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=0.5)%>%
+  layer_labelgroups(cex=0.5,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+```
+
+## 中大型品の分析
+- 第一主成分：断面の厚さ、第二主成分：体部の外反具合、第三主成分：腰部の屈曲具合
+```{r echo=FALSE}
+PCcontrib(pca_large2,nax=1:3) 
+```
+
+## 第一主成分vs第二主成分
+```{r echo=FALSE}
+#第1・2主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,
+         pca_large2[["fac"]][["ERA"]],
+         morphospace_position = "range",
+         axes = c(1,2),
+         zoom = 1.75,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（大）比較(PC1vs.PC2)",cex=0.7)%>%
+  layer_points(pch = c(pca_large2[["fac"]][["ERA"]]),cex=0.5)%>%
+  layer_labelgroups(cex=0.5,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+```
+
+## 第一主成分vs第三主成分
+```{r echo=FALSE}
+#第1・3主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,
+         pca_large2[["fac"]][["ERA"]],
+         morphospace_position = "range",
+         axes = c(1,3),
+         zoom = 1.75,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（大）比較(PC1vs.PC3)",cex=0.7)%>%
+  layer_points(pch = c(pca_large2[["fac"]][["ERA"]]),cex=0.5)%>%
+  layer_labelgroups(cex=0.5,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+```
+
+
+## （参考）京都の土師器皿の口径分布
+
+```{r}
+#京都の土師器皿
+df3_kyoto<-df2%>%
+  filter(Prefecture=="Kyoto")%>%
+  mutate(遺跡 = case_when(
+    str_detect(Feature,"SE0922")~"H-L-4-2-14_SE0922",
+    str_detect(Feature,"SK2185")~"H-L-4-2-14_SK2185",
+    str_detect(Feature,"土壙170")~"史跡名勝嵐山土壙170",
+    str_detect(Feature,"SK415")~"H-L-3-4-7_SK415",
+    str_detect(Feature,"石室2")~"山科寺内町遺跡石室2〜4",
+    str_detect(Feature,"石室3")~"山科寺内町遺跡石室2〜4",
+    str_detect(Feature,"石室4")~"山科寺内町遺跡石室2〜4",
+    str_detect(Feature,"土坑170")~"H-L-5-3-10_土坑170",
+    str_detect(Feature,"SK499")~"H-L-5-3-6_SK499",
+    str_detect(Feature,"土坑2134")~"山科本願寺跡土坑2134",
+    str_detect(Feature,"SD166上層")~"H-L-6-2-5・猪熊殿跡・本圀寺跡SD166上層",))
+ggplot(data=df3_kyoto)+
+  aes(x=rim_diamiter,fill=type)+
+  geom_histogram(binwidth = 0.5)+
+  facet_wrap(~遺跡,scales="free_y",ncol=3)+
+  labs(x="口径(cm)",
+       y="個数")+
+  theme_minimal(base_family = "IPAexGothic")
+```
+
+## 結論
+
+- **富山県の京都系土師器皿は、京都9C段階以降の土師器皿がモデル**
+
+　富山第1段階(15c後半)は京都9C・10A・10A-B段階（15C後葉・16C前葉・1530年代頃）の資料に類似し、京都9B段階（15C中葉）とは離れる傾向。京都9C段階の小型品と同様な調整もある。
+
+- **富山県では、京都の土師器皿の情報は限定的**
+
+　小型品は富山第1段階においても厚手の傾向、石名田木舟遺跡SD7030の小型品の体部調整（2字ナデ）、ヘソ皿（Sh）が富山県で少ない。
+
+---
+
+- **富山県では京都系土師器皿の受容は15世紀後半の一度きりで、その後は京都の情報を継続的に受容することもなく、在地化（形骸化）していく**
+
+　大小に関わらず、富山県の土師器皿は厚手化する傾向。中大型品に顕著で、富山第3段階の小型品では厚さが保持される一方で、中大型品ではすでに厚手化する傾向にある。同時期の京都10A-B段階（1530年代頃）では、小型品が薄手化する傾向にある。石川県とも対照的。
+
+---
+

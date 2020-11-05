@@ -1,0 +1,695 @@
+---
+title: "R言語を利用した京都系土師器皿の研究"
+author: "松井　広信"
+date: "2020/11/08"
+output:
+  html_document: default
+bibliography: mylib.bib
+csl: sist02-japanese_変更.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# 必要なパッケージの起動。まだ入れてない場合はinstall.packages()
+library(tidyverse)
+library(Momocs)
+library(DT)
+load("./R言語を利用した京都系土師器皿の研究.RData")
+```
+
+# はじめに
+
+　このファイルは令和2年11月8日に越中史壇会で発表した「R言語を利用した京都系土師器皿の研究」で使用したデータを、実際に動かした際のコード類である。作業用のメモを兼ねているため可読性に乏しいが、作業過程を明らかにできるため、公開する。
+
+　「スライド.Rmd」は発表で使用したスライド、「資料.Rmd」は発表で配布した手持ち資料である。フォルダのsmallとlargeには実際に資料したjpgデータが入っている。「list.csv」はjpgデータの元となった実測図のデータで、口径などのデータは報告書に記載しているものと異なることがある（その場合は実測図から計測している）。
+
+## 対象となる遺跡
+
+　京都産土師器皿は
+    [@komori_uemura_1996]、[@hirao_2019]、[@morishima_2019]
+    に掲載された、被災資料等年代観が比較的共有されている資料を対象とする。1530年代の資料のみ数年しか変わらないので京都10A-B段階とする。中世後期の京都の土師器皿には、N系列とS系列があり、京都系土師器皿とよく似たS系列（S,Sb）を対象とし、ヘソ皿（Sh）は除外する。
+
+　北陸における京都系土師器皿の受容を比較するために、石川県の京都系土師器皿も対象とする。七尾市の七尾城下町遺跡、七尾湾沿岸の小島西遺跡を対象とし、年代観は
+    [@iwase_2019]
+    に準拠する。富山県の資料は、石名田木舟遺跡と富山城跡レガートスクエア地区の出土量が豊富な4遺構を対象とする。年代観は
+    [@matsui_2019] に準拠する。
+
+```{r}
+site_list <- read.csv('site_list.csv',header = TRUE)
+datatable(site_list,rownames=FALSE,extensions='Scroller',
+          options=list(dom = 't',
+                       scrollX = TRUE,
+                       scrollY = 300))
+```
+<center>
+対象とした遺跡
+</center>
+
+# 考古学的観察結果の整理・可視化
+
+## データ操作
+
+### データを読み込み、加工する
+
+　CSVファイルを読み込んでRパッケージtidyverseで加工していく。tidyverseはデータの編集・可視化に便利なパッケージをまとめたもので、これさえインストールしていれば不都合はない。
+
+```{r eval=FALSE, include=FALSE}
+#まだインストールされていない場合にrunする
+install.packages("tidyverse")
+```
+
+```{r eval=FALSE, include=FALSE}
+#library()で起動する。
+library(tidyverse)
+```
+
+```{r}
+#すでにRDataの中に格納している。
+#csvの取り込み：read.csv("名前.csv"~)
+df0<-read.csv('list.csv',header = TRUE)
+#特定の用語の行を抽出：filter(data,列名==用語)
+#特定の用語を含む物を複数抽出：filter(data,列名%in%c(用語1,用語2))
+#空白（NA）を含む行の削除：!is.na()
+df1<-df0%>%
+  filter(type%in%c("TI","京S","京Sh","京Sb","京N","京Sbh","石B","石Bh"))%>%
+  filter(!is.na(rim_diamiter))
+#リネーム：rename（新しい列名＝変更したい列名）
+#新しい列の追加：mutate(列名=条件など)
+#条件の追加：case_when(~)
+#文字を含むかどうか：str_detect(~)
+#列の削除：select(-削除したい列名)
+df2<-df1%>%mutate(調整パターン=case_when(
+  str_detect(調整_内面,"体部：2字ナデ・の字ナデ")~"7_その他",
+  str_detect(調整_内面,"指ナデ")&str_detect(調整_内面,"2字ナデ")~"1_指ナデ+2字ナデ",
+  str_detect(調整_内面,"指ナデ")&str_detect(調整_内面,"の字ナデ")~"2_指ナデ+の字ナデ",
+  str_detect(調整_内面,"一方向ナデ")&str_detect(調整_内面,"2字ナデ")~"3_一方向ナデ+2字ナデ",
+  str_detect(調整_内面,"一方向ナデ")&str_detect(調整_内面,"の字ナデ")~"4_一方向ナデ+の字ナデ",
+  str_detect(調整_内面,"見込：無し")&str_detect(調整_内面,"2字ナデ")~"5_無調整+2字ナデ",
+  str_detect(調整_内面,"見込：無し")&str_detect(調整_内面,"の字ナデ")~"6_無調整+の字ナデ",
+    str_detect(調整_内面,"見込：紐の圧痕")~"7_その他",
+  TRUE~"8_不明・不明瞭"))%>%
+  select(-調整_内面,-調整_外面)%>%
+  mutate(ERA=case_when(
+    str_detect(Feature,"SD7030")~"富山第1段階",
+    str_detect(Feature,"SD7003")~"富山第2段階",
+    str_detect(Feature,"3SD54")~"富山第3段階",
+    str_detect(Feature,"2SK705")~"富山第4段階",
+    str_detect(Feature,"SE0922")~"京都9C段階",
+    str_detect(Feature,"SK2185")~"京都10A段階",
+    str_detect(Feature,"土壙170")~"京都9B段階",
+    str_detect(Feature,"SK415")~"京都9C段階",
+    str_detect(Feature,"石室2")~"京都10A段階",
+    str_detect(Feature,"石室3")~"京都10A段階",
+    str_detect(Feature,"石室4")~"京都10A段階",
+    str_detect(Feature,"土坑170")~"京都9C段階",
+    str_detect(Feature,"土坑2134")~"京都10A段階",
+    str_detect(Feature,"SK499")~"京都10A段階",
+    str_detect(Feature,"SD166上層")~"京都10B段階",
+    str_detect(Feature,"B_SK25")~"石川2段階",
+    str_detect(Feature,"G_SK373")~"石川3段階",
+    str_detect(Feature,"SX09")~"石川4段階",))
+#momocsでchr型では支障があるので、ERA列をfactor型に変換
+df2$ID<-as.double(df2$ID)
+df2$ERA<-as.factor(df2$ERA)
+df2$Feature<-as.factor(df2$Feature)
+df2$type<-as.factor(df2$type)
+is.double(df2$ID)
+is.factor(df2$ERA)
+is.factor(df2$Feature)
+is.factor(df2$type)
+```
+
+```{r}
+# データフレームの概要確認：head()
+# Environment > Data > df2からも内容を確認することができる。
+head(df2)
+```
+
+
+## グラフの描写
+
+### ヒストグラムを描写
+
+　連続するデータの分布状況を視覚的に認識するために**ヒストグラム**を利用する。考古学においては器形・口径のような連続するデータを**散布図**でプロットしたものがよく使われるが、口径分布を知るためにはヒストグラムで事足り、散布図では分布がわかりにくい[@ishii_2020]。
+
+```{r}
+#データの整理
+sample1<-df2%>%
+  filter(Feature=="SD7030")
+#geom_histogram(~)：ヒストグラムで描写
+#「最適なビン幅」は決まっていないので、状況に応じて設定
+#base_family=:日本語化
+#theme(legend.position~):凡例の位置を調整
+ggplot(data=sample1)+
+  aes(x=rim_diamiter,fill=調整パターン)+
+  geom_histogram(binwidth = 0.5)+
+  labs(x="口径(cm)",y="個数",fill="調整パターン")+
+  theme_minimal(base_family = "IPAexGothic")+
+  theme(legend.position=c(0.8,0.7))
+```
+
+# （参考）散布図の描写
+
+```{r}
+#データの整理
+sample2<-df2%>%
+  filter(Feature=="SD7030")%>%
+  filter(!is.na(hight))
+#geom_point(~)：散布図で描写
+#xlim(),ylim()：x軸とy軸の範囲を設定
+#base_family=:日本語化
+ggplot(data=sample2)+
+  aes(x=rim_diamiter,y=hight,col=調整パターン)+
+  geom_point(size=2)+
+  xlim(5,20)+
+  ylim(1,3)+
+  labs(x="口径(cm)",y="器高(cm)",fill="調整パターン")+
+  theme_minimal(base_family = "IPAexGothic")
+```
+
+### 図をまとめて表示する
+
+　調整のパターンと口径分布について作図する。
+
+```{r}
+#facet_wrapでまとめて表示（メモリも統一してくれるので便利）
+#区分する要素がタイトルになるようです（今回は「分類」列）。
+#各タイトルを変更する場合はas_labellerを使用。
+df3_toyama<-df2%>%filter(Prefecture=="Toyama")
+tittle<-as_labeller(c(`2SK705` = "富山城跡2SK705",
+                      `3SD54` = "富山城跡3SD54",
+                      `SD7003` = "石名田木舟遺跡SD7003",
+                      `SD7030` = "石名田木舟遺跡SD7030"))
+ggplot(data=df3_toyama)+
+  aes(x=rim_diamiter,fill=調整パターン)+
+  geom_histogram(binwidth = 0.5)+
+  facet_wrap(~Feature,scales="free_y",labeller = tittle,ncol=1)+
+  labs(x="口径(cm)",
+       y="個数",
+       fill="調整パターン")+
+  theme_minimal(base_family = "IPAexGothic")
+#出力した図をpng形式で保存する場合はggsaveが便利。
+#例：ggsave("調整パターンと口径分布.png",height=10,width=10,dpi=300)
+```
+
+```{r}
+#京都の土師器皿
+df3_kyoto<-df2%>%
+  filter(Prefecture=="Kyoto")%>%
+  mutate(遺跡 = case_when(
+    str_detect(Feature,"SE0922")~"H-L-4-2-14_SE0922",
+    str_detect(Feature,"SK2185")~"H-L-4-2-14_SK2185",
+    str_detect(Feature,"土壙170")~"史跡名勝嵐山土壙170",
+    str_detect(Feature,"SK415")~"H-L-3-4-7_SK415",
+    str_detect(Feature,"石室2")~"山科寺内町遺跡石室2〜4",
+    str_detect(Feature,"石室3")~"山科寺内町遺跡石室2〜4",
+    str_detect(Feature,"石室4")~"山科寺内町遺跡石室2〜4",
+    str_detect(Feature,"土坑170")~"H-L-5-3-10_土坑170",
+    str_detect(Feature,"SK499")~"H-L-5-3-6_SK499",
+    str_detect(Feature,"土坑2134")~"山科本願寺跡土坑2134",
+    str_detect(Feature,"SD166上層")~"H-L-6-2-5・猪熊殿跡・本圀寺跡SD166上層",))
+ggplot(data=df3_kyoto)+
+  aes(x=rim_diamiter,fill=type)+
+  geom_histogram(binwidth = 0.5)+
+  facet_wrap(~遺跡,scales="free_y",ncol=3)+
+  labs(x="口径(cm)",
+       y="個数")+
+  theme_minimal(base_family = "IPAexGothic")
+#必要に応じてggsaveで出力した図をpng形式で保存
+```
+
+# 幾何学的形態測定学
+
+## 幾何学的形態測定学とは
+
+　ここでは幾何学的形態測定学について、先行研究を参考に説明する[@ubukata_2005][@ubukata_2011][@tamura_2017]。幾何学的形態測定学（geometric morphometrics：GMM）とは対象となる「かたち」を定量的に分析するための理論体系である。それに対し、距離・角度・比といった直線的な計測・分析を伝統的形態測定学（traditional morphometrics）と言う。例えば、考古学で一般的に用いられる口径や器高などの計測は後者に当たる。
+
+　伝統的形態測定学は、適切な情報を選択すれば効率的に分析が可能だが、連続的に変わる「かたち」のごく一部を選択しているにすぎないため、多くの「かたち」の情報は捨ててしまうこととなる。例えば、これまでの土師器皿研究では、口径と器高といった直線的な「距離」の計測が採用されている。GMMで扱う「かたち」とは「形状」（shape）のことで、位置・向き・サイズによらない性質のことである。
+
+　GMMには主に2種類の分析手法がある。1つは複数の対象に共通する「標識点」（landmark）の集合で形状をモデル化する「標識点ベース形態測定学」（landmark-based morphometrics）である。この方法では対象となるものに相同な「標識点」を基準に規格化する。標識点の間を「セミランドマーク」で繋ぎ、分析する手法も含む。相同な標識点を設定しやすい生物学（古生物・動物・植物etc）の分野で発展し、生物の進化などの研究でよく用いられている。
+
+　もう一つは対象の輪郭を数学的な関数に変換してモデル化する「輪郭ベース形態測定学」（outline-based morphometrics）である。「楕円フーリエ解析」（elliptic fourier analysis：EFA）と呼ばれる。EFAは閉曲線上を走る点の軌跡を、x軸・y軸それぞれ三角関数を用いた数式で表すことで、輪郭の情報を扱うものである。数学的な手法そのものは19世紀から存在するが、1970年代からGMMに応用され、発展した。
+
+　これらの分析手法は、R[@rcoreteam_2020]のパッケージmomocs[@Bonhomme_2014]を用いて簡単に利用することが可能である。
+
+## momocsを利用したEFA
+
+### データの読みこみ
+
+　富山県の土師器皿を基本として、約10.7cmで調整が変化（の字ナデ→2字ナデ）している。
+
+```{r}
+#一覧表データの整理
+database_small<-df2%>%
+  filter(!type=="石Bh")%>%
+  filter(!Target==FALSE,rim_diamiter<10.7)
+database_large<-df2%>%
+  filter(!Target==FALSE,rim_diamiter>=10.7)
+#概要表示
+head(database_small)
+summary(database_small$Feature)
+head(database_large)
+summary(database_large$Feature)
+```
+
+```{r echo=TRUE, eval=FALSE, warning=FALSE}
+#library()で起動する。
+library(Momocs)
+```
+
+```{r echo=TRUE, eval=FALSE, warning=FALSE}
+load("R言語を利用した京都系土師器皿の研究.RData")
+```
+
+```{r small_1, echo=TRUE, eval=FALSE}
+#import_jpg：jpg画像の読みこみ
+jpg_small.list <- list.files("./small")
+list_small <- paste("./small/",jpg_small.list,sep="")
+coo_small <- import_jpg(list_small)
+out_small <- Out(coo_small,fac=database_small)
+```
+
+```{r small_2}
+#jpgデータの一覧を表示
+panel(out_small,fac='ERA',names=TRUE)
+stack(out_small)
+```
+
+```{r large_1, echo=TRUE, eval=FALSE}
+#import_jpg：jpg画像の読みこみ
+jpg_large.list <- list.files("./large")
+list_large <- paste("./large/",jpg_large.list,sep="")
+coo_large <- import_jpg(list_large)
+out_large <- Out(coo_large,fac=database_large)
+```
+
+```{r large_2}
+#jpgデータの一覧を表示
+out_large
+panel(out_large,fac='ERA',names=TRUE)
+stack(out_large)
+```
+
+### 規格化
+
+　楕円フーリエ解析を行う前に、位置・サイズ・向きの情報を規格化し、「かたち」だけの情報にする。規格化の方法は様々であるが、ここでは口縁端部、断面と中心線との2つの交点を標識点とみなし、ランドマーク法で使われる「プロクラステス重ね合わせ」（ the procrustes superimposition）を利用して規格化する。
+
+　なお、分析する対象によって規格化の方法は異なるが、よく使われるものに[coo_scale関数](https://momx.github.io/Momocs/reference/coo_scale.html)、[coo_center関数](https://momx.github.io/Momocs/reference/coo_center.html)などがある。石器などは上記の方法で可能だが、土器の断面のように第1調和数（＝楕円）が実際の形状と極端に異なる対象は、主成分分析の結果を再構築した際に崩れるので、「プロクラテス重ね合わせ」が利用できる[fgProcrustes関数](https://momx.github.io/Momocs/reference/fgProcrustes.html)を使う。
+
+```{r small_3, echo=TRUE, eval=FALSE}
+#def_ldk(out,標識点の個数)：輪郭（out）をクリックして標識点を設定
+#coo_slide(ldk=2)：標識点2を基準に平行移動
+#fgProcrustes() ：プロクラステス重ね合わせ
+#Consoleで実行すること！
+shape_small<-def_ldk(out_small,3)%>%coo_slide(ldk=2)%>%fgProcrustes() 
+```
+
+```{r large_3, echo=TRUE, eval=FALSE}
+#def_ldk(out,標識点の個数)：輪郭（out）をクリックして標識点を設定
+#coo_slide(ldk=2)：標識点2を基準に平行移動
+#fgProcrustes() ：プロクラステス重ね合わせ
+shape_large<-def_ldk(out_large,3)%>%coo_slide(ldk=2)%>%fgProcrustes() 
+```
+
+```{r small_4}
+stack(shape_small)
+```
+
+```{r large_4}
+stack(shape_large)
+```
+
+### 楕円フーリエ解析
+
+```{r small_5, echo=TRUE, eval=FALSE}
+#calibrate_harmonicpower_efourier()：調和数の特定
+calibrate_harmonicpower_efourier(shape_small,nb.h=30)
+```
+
+```{r small_6, echo=TRUE, eval=FALSE}
+#calibrate_harmonicpower_efourier()：調和数の特定
+#efourier()：楕円フーリエ分析
+f_small <- efourier(shape_small,nb.h=16,norm=FALSE)
+```
+
+```{r large_5, echo=TRUE, eval=FALSE}
+#calibrate_harmonicpower_efourier()：調和数の特定
+calibrate_harmonicpower_efourier(shape_large,nb.h=30)
+```
+
+```{r large_6, echo=TRUE, eval=FALSE}
+#calibrate_harmonicpower_efourier()：調和数の特定
+#efourier()：楕円フーリエ分析
+f_large <- efourier(shape_large,nb.h=17,norm=FALSE)
+```
+
+### 主成分分析
+
+　楕円フーリエ解析を可視化する方法の1つに主成分分析がある。主成分分析はデータ解析手法の一つで、たくさんの情報をバラツキを最もよく表すよう要約することができる。[PCcontrib関数](https://momx.github.io/Momocs/reference/PCcontrib.html)でその結果を表示でき、Meanは平均、SDは標準偏差を表す。
+
+```{r small_7}
+#第1〜3主成分までの結果を表示する
+pca_small <- PCA(f_small)
+PCcontrib(pca_small,nax=1:5) 
+```
+
+```{r large_7}
+#第1〜3主成分までの結果を表示する
+pca_large <- PCA(f_large)
+PCcontrib(pca_large,nax=1:5) 
+```
+
+### 「外れ値」を除外する
+
+　PCcontrib関数やplot_PCA関数で主成分分析の結果を可視化した時、形の再構築が上手くいかなかったり、点が極端に離れた位置にプロットされることがある（外れ値）。momocsでは[which_out関数](https://momx.github.io/Momocs/reference/which_out.html)で「外れ値」を除外することができる。
+
+```{r small_8}
+#外れ値の特定
+which_out(pca_small$x[,1],0.5)
+#外れ値が赤くプロットされる
+cols <- rep("black", nrow(pca_small$x))
+outliers <- which_out(pca_small$x[, 1], 0.5)
+cols[outliers] <- "red"
+plot(pca_small, col=cols)
+```
+
+```{r small_9}
+#外れ値を除外し再度主成分分析を実施
+#tidyverse→momocsの順に起動しないとエラー
+pca_small2<-f_small%>%slice(-outliers)%>%PCA
+PCcontrib(pca_small2,nax=1:5) 
+```
+
+```{r small_10}
+#pca_smallに格納したfac（list）の一部を修正。
+pca_small2[["fac"]]<-pca_small2[["fac"]]%>%
+  mutate(ERA=case_when(
+    str_detect(Feature,"SD7030")~"富山第1段階",
+    str_detect(Feature,"SD7003")~"富山第2段階",
+    str_detect(Feature,"3SD54")~"富山第3段階",
+    str_detect(Feature,"2SK705")~"富山第4段階",
+    str_detect(Feature,"SE0922")~"京都9C段階",
+    str_detect(Feature,"SK2185")~"京都10A段階",
+    str_detect(Feature,"土壙170")~"京都9B段階",
+    str_detect(Feature,"SK415")~"京都9C段階",
+    str_detect(Feature,"石室2")~"京都10A-B段階",
+    str_detect(Feature,"石室3")~"京都10A-B段階",
+    str_detect(Feature,"石室4")~"京都10A-B段階",
+    str_detect(Feature,"土坑2134")~"京都10A-B段階",
+    str_detect(Feature,"土坑170")~"京都9C段階",
+    str_detect(Feature,"SK499")~"京都10A段階",
+    str_detect(Feature,"SD166上層")~"京都10A-B段階",
+    str_detect(Feature,"B_SK25")~"石川2段階",
+    str_detect(Feature,"G_SK373")~"石川3段階",
+    str_detect(Feature,"SX09")~"石川4段階"))
+pca_small2[["fac"]][["ERA"]]<-as.factor(pca_small2[["fac"]][["ERA"]])
+pca_small2[["fac"]][["type"]]<-as.factor(pca_small2[["fac"]][["type"]])
+```
+
+```{r large_8}
+#外れ値の特定
+which_out(pca_large$x[,1],0.5)
+#外れ値が赤くプロットされる
+cols_2 <- rep("black", nrow(pca_large$x))
+outliers_2 <- which_out(pca_large$x[, 1], 0.2)
+cols_2[outliers_2] <- "red"
+plot(pca_large, col=cols_2)
+```
+
+```{r large_9}
+#外れ値を除外し再度主成分分析を実施
+pca_large2<-f_large%>%slice(-outliers_2)%>%PCA
+PCcontrib(pca_large2,nax=1:5) 
+```
+
+```{r large_10}
+#pca_largeに格納したfac（list）の一部を修正
+pca_large2[["fac"]]<-pca_large2[["fac"]]%>%
+  mutate(ERA=case_when(
+    str_detect(Feature,"SD7030")~"富山第1段階",
+    str_detect(Feature,"SD7003")~"富山第2段階",
+    str_detect(Feature,"3SD54")~"富山第3段階",
+    str_detect(Feature,"2SK705")~"富山第4段階",
+    str_detect(Feature,"SE0922")~"京都9C段階",
+    str_detect(Feature,"SK2185")~"京都10A段階",
+    str_detect(Feature,"土壙170")~"京都9B段階",
+    str_detect(Feature,"SK415")~"京都9C段階",
+    str_detect(Feature,"石室2")~"京都10A-B段階",
+    str_detect(Feature,"石室3")~"京都10A-B段階",
+    str_detect(Feature,"石室4")~"京都10A-B段階",
+    str_detect(Feature,"土坑2134")~"京都10A-B段階",
+    str_detect(Feature,"土坑170")~"京都9C段階",
+    str_detect(Feature,"SK499")~"京都10A段階",
+    str_detect(Feature,"SD166上層")~"京都10A-B段階",
+    str_detect(Feature,"B_SK25")~"石川2段階",
+    str_detect(Feature,"G_SK373")~"石川3段階",
+    str_detect(Feature,"SX09")~"石川4段階"))
+pca_large2[["fac"]][["ERA"]]<-as.factor(pca_large2[["fac"]][["ERA"]])
+pca_large2[["fac"]][["type"]]<-as.factor(pca_large2[["fac"]][["type"]])
+```
+
+```{r echo=TRUE, eval=FALSE}
+#作図用
+png("small_PCA.png",
+    width=4800,
+    height=4800,
+    res=300)
+PCcontrib(pca_small2,nax=1:3) 
+png("large_PCA.png",
+    width=4800,
+    height=4800,
+    res=300)
+PCcontrib(pca_large2,nax=1:3) 
+dev.off()
+```
+
+### 主成分分析を可視化
+
+　[plot_PCA関数](https://momx.github.io/Momocs/reference/plot_PCA.html)で主成分分析の結果を図示する。layer関数を重ねることで図を加工することができる。par(family=~)は図を作成する際に日本語を使うときに利用する。
+
+```{r small_11}
+#第1・2主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,2),
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC1vs.PC2)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+
+#第1・3主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,3),
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC1vs.PC3)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+
+#第2・3主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(2,3),
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC2vs.PC3)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+```
+
+```{r large_11}
+#第1・2主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,2),
+         zoom = 1.25,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（大）比較(PC1vs.PC2)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+
+#第1・3主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,3),
+         zoom = 1.25,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（大）比較(PC1vs.PC3)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+
+#第2・3主成分の結果を表示
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,~ERA,
+         morphospace_position = "range",
+         axes = c(2,3),
+         zoom = 1.25,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（大）比較(PC2vs.PC3)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+```
+
+```{r small_12, echo=TRUE, eval=FALSE}
+#pngファイルで出力する場合はこちら
+#第1・2主成分の結果を表示
+png("small_PC1VSPC2.png",
+    width=4800,
+    height=4800,
+    res=300)
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,2),
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC1vs.PC2)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+dev.off()
+
+#第1・3主成分の結果を表示
+png("small_PC1VSPC3.png",
+    width=4800,
+    height=4800,
+    res=300)
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,3),
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC1vs.PC3)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+dev.off()
+
+#第2・3主成分の結果を表示
+png("small_PC2VSPC3.png",
+    width=4800,
+    height=4800,
+    res=300)
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(2,3),
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小）比較(PC2vs.PC3)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+dev.off()
+```
+
+```{r large_12, echo=TRUE, eval=FALSE}
+#第1・2主成分の結果を表示
+png("large_PC1VSPC2.png",
+    width=4800,
+    height=4800,
+    res=300)
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,2),
+         zoom = 1.25,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（大）比較(PC1vs.PC2)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+dev.off()
+
+#第1・3主成分の結果を表示
+png("large_PC1VSPC3.png",
+    width=4800,
+    height=4800,
+    res=300)
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,3),
+         zoom = 1.25,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（大）比較(PC1vs.PC3)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+dev.off()
+
+#第2・3主成分の結果を表示
+png("large_PC2VSPC3.png",
+    width=4800,
+    height=4800,
+    res=300)
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,~ERA,
+         morphospace_position = "range",
+         axes = c(2,3),
+         zoom = 1.25,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_solarized)%>%
+  layer_title(title="富山・石川・京都の土師器皿（大）比較(PC2vs.PC3)",cex=1)%>%
+  layer_points(pch = c(pca_small2[["fac"]][["ERA"]]),cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 0.3)%>%
+  layer_ellipses(conf=0.5,lwd=1)
+dev.off()
+```
+
+
+## 「かたち」をさらに探索する
+
+一応参考までに。
+
+### クラスター分析
+
+```{r small_13}
+CLUST(pca_small2,
+      ~ERA,
+      dist_method = "euclidean", 
+      hclust_method = "complete",
+      k=4,cex = 0.3)
+```
+
+### 平均的な「かたち」を構築
+
+```{r small_14}
+meanshapes <- MSHAPES(f_small, ~ERA)
+par(family = "IPAexGothic")
+plot_MSHAPES(meanshapes, size = 0.75)
+```
+
+# 参考文献
+　参考文献については、[zotero](https://www.zotero.org)でbibファイルを作成・管理し、既存のcslファイル（sist-02）を[Visual CSL Editor](https://editor.citationstyles.org/visualEditor/)で改変し、体裁を整えている。

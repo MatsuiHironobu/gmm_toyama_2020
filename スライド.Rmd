@@ -267,13 +267,19 @@ knitr::include_graphics(path = "./fig/13Rstudiologo.png")
 
 ## 断面図を対象とした理由
 
+-   **準備が容易で、既存資料で実行可能**
+
+　SfMやレーザースキャナで3D化=専用ソフト、費用が高額。実測図=無料、共有が容易
+
 -   **実測図の特性**
 
 　残存率が悪い場合、実測図の外形（左側）を反転して描くことがある。断面は測点を落とし、マコやディバイダーを使用するため、外形よりも信頼できる。
 
--   **１個体の中でも測定する場所ごとに形が異なる**
+-   **問題点：１個体の中でも測定する場所ごとに形が異なる**
 
 　今回のような実測図そのものを使用する研究では結果に影響する可能性があるが、一括資料を採用し、その傾向をつかむことによって、ある程度問題を緩和できる。
+
+---
 
 -   **使用したソフト**
 
@@ -333,13 +339,10 @@ knitr::include_graphics(path = "./fig/17momocsの分析手順.png")
 
 ```{r echo=TRUE, eval=FALSE, warning=FALSE}
 library(Momocs) #momocsを起動（未インストールの場合：install.packages()）
+load("R言語を利用した京都系土師器皿の研究.RData") #データのロード
 ```
 
-```{r echo=TRUE, eval=FALSE}
-load("R言語を利用した京都系土師器皿の研究.RData")
-```
-
-```{r ,fig.width=7,echo=TRUE, message=FALSE, warning=FALSE}
+```{r ,echo=TRUE, message=FALSE, warning=FALSE}
 stack(out_small) #jpgデータの一覧を表示
 ```
 
@@ -353,7 +356,7 @@ shape_small<-def_ldk(out_small,3)%>%coo_slide(ldk=2)%>%fgProcrustes()
 stack(shape_small)
 ```
 
-```{r ,fig.width=7,echo=FALSE, message=FALSE, warning=FALSE}
+```{r ,echo=FALSE, message=FALSE, warning=FALSE}
 stack(shape_small)
 ```
 

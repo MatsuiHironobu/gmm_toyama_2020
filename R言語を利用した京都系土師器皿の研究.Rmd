@@ -120,7 +120,7 @@ is.factor(df2$type)
 ```
 
 ```{r}
-# データフレームの概要確認：head()
+# head():データフレームの概要確認
 # Environment > Data > df2からも内容を確認することができる。
 head(df2)
 ```
@@ -465,7 +465,7 @@ dev.off()
 
 ### 主成分分析を可視化
 
-　[plot_PCA関数](https://momx.github.io/Momocs/reference/plot_PCA.html)で主成分分析の結果を図示する。layer関数を重ねることで図を加工することができる。par(family=~)は図を作成する際に日本語を使うときに利用する。
+　[plot_PCA関数](https://momx.github.io/Momocs/reference/plot_PCA.html)で主成分分析の結果を図示する。layer関数を重ねることで図を加工することができる。par(family=~)は図に日本語を使うときに利用する。
 
 ```{r small_11}
 #第1・2主成分の結果を表示

@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(Momocs)
 library(DT)
+library(patchwork)
 load("./R言語を利用した京都系土師器皿の研究.RData")
 ```
 
@@ -468,8 +469,10 @@ dev.off()
 　[plot_PCA関数](https://momx.github.io/Momocs/reference/plot_PCA.html)で主成分分析の結果を図示する。layer関数を重ねることで図を加工することができる。par(family=~)は図に日本語を使うときに利用する。
 
 ```{r small_11}
-#第1・2主成分の結果を表示
+#日本語フォントが必要な場合に入力
 par(family = "IPAexGothic")
+
+#第1・2主成分の結果を表示
 plot_PCA(pca_small2,~ERA,
          morphospace_position = "range",
          axes = c(1,2),
@@ -482,7 +485,6 @@ plot_PCA(pca_small2,~ERA,
   layer_ellipses(conf=0.5,lwd=1)
 
 #第1・3主成分の結果を表示
-par(family = "IPAexGothic")
 plot_PCA(pca_small2,~ERA,
          morphospace_position = "range",
          axes = c(1,3),
@@ -495,7 +497,6 @@ plot_PCA(pca_small2,~ERA,
   layer_ellipses(conf=0.5,lwd=1)
 
 #第2・3主成分の結果を表示
-par(family = "IPAexGothic")
 plot_PCA(pca_small2,~ERA,
          morphospace_position = "range",
          axes = c(2,3),
@@ -668,10 +669,163 @@ plot_PCA(pca_large2,~ERA,
 dev.off()
 ```
 
+```{r,dpi=300,echo=FALSE eval=FALSE, include=FALSE, r,dpi=300}
+#画像ファイルとして出力する場合
+#第1・2主成分の結果を表示
+#小
+png("小.png",
+    width=3600,
+    height=2400,
+    res=300)
+par(family = "IPAexGothic")
+plot_PCA(pca_small2,~ERA,
+         morphospace_position = "range",
+         axes = c(1,2),
+         zoom = 2.0,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_grey)%>%
+  layer_title(title="富山・石川・京都の土師器皿（小型品）比較(PC1vs.PC2)",cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 1)%>%
+  layer_ellipsesaxes(conf=0.9,lwd=0.5)%>%
+  layer_ellipsesaxes(conf=0.5,lwd=1)%>%
+  layer_ellipses(conf=0.5,lwd=2)
+```
+
+```{r,dpi=300,echo=FALSE eval=FALSE, include=FALSE, r,dpi=300}
+#画像ファイルとして出力する場合
+#第1・2主成分の結果を表示
+#大
+png("大.png",
+    width=3600,
+    height=2400,
+    res=300)
+par(family = "IPAexGothic")
+plot_PCA(pca_large2,
+         pca_large2[["fac"]][["ERA"]],
+         morphospace_position = "range",
+         axes = c(1,2),
+         zoom = 2.25,
+         points = FALSE,
+         chull = FALSE,
+         palette = col_grey)%>%
+  layer_title(title="富山・石川・京都の土師器皿（中大型品）比較(PC1vs.PC2)",cex=1)%>%
+  layer_labelgroups(cex=1,alpha = 1)%>%
+  layer_ellipsesaxes(conf=0.9,lwd=0.5)%>%
+  layer_ellipsesaxes(conf=0.5,lwd=1)%>%
+  layer_ellipses(conf=0.5,lwd=2)
+```
 
 ## 「かたち」をさらに探索する
 
 一応参考までに。
+
+```{r ,fig.width=5, dpi=300}
+#各主成分を抜き出すこともできるようです（https://researchmap.jp/k_tateuchi/published_works）
+PC1<-pca_small2$x
+#PC1から各主成分を抜き出す
+b1<-PC1[,"PC1"]
+b2<-PC1[,"PC2"]
+b3<-PC1[,"PC3"]
+era<-pca_small2$fac$ERA
+#データフレームに統合
+PCdata<-data.frame(PC1=b1,PC2=b2,PC3=b3,ERA=era)
+#各段階ごとの第1主成分を図示。reorderで並び替え
+s1<-ggplot(PCdata)+
+  aes(x=reorder(ERA,PC1,FUN = median),
+      y=PC1)+
+  geom_boxplot()+
+  labs(x="時期",
+       y="PC1")+
+  theme_minimal(base_family = "IPAexGothic")+
+  coord_flip()
+s2<-ggplot(PCdata)+
+  aes(x=reorder(ERA,PC2,FUN = median),
+      y=PC2)+
+  geom_boxplot()+
+  labs(x="時期",
+       y="PC2")+
+  theme_minimal(base_family = "IPAexGothic")+
+  coord_flip()
+s3<-ggplot(PCdata)+
+  aes(x=reorder(ERA,PC3,FUN = median),
+      y=PC3)+
+  geom_boxplot()+
+  labs(x="時期",
+       y="PC3")+
+  theme_minimal(base_family = "IPAexGothic")+
+  coord_flip()
+#patchworkパッケージによりひとまとめに。
+s1 /s2 /s3
+```
+
+```{r}
+#各主成分を抜き出すこともできるようです（https://researchmap.jp/k_tateuchi/published_works）
+PC2<-pca_large2$x
+#PC1から各主成分を抜き出す
+c1<-PC2[,"PC1"]
+c2<-PC2[,"PC2"]
+c3<-PC2[,"PC3"]
+era2<-pca_large2$fac$ERA
+#データフレームに統合
+PCdata2<-data.frame(PC1=c1,PC2=c2,PC3=c3,ERA=era2)
+#各段階ごとの第1主成分を図示。reorderで並び替え
+L1<-ggplot(PCdata2)+
+  aes(x=reorder(ERA,PC1,FUN = median),
+      y=PC1)+
+  geom_boxplot()+
+  labs(x="時期",
+       y="PC1")+
+  theme_minimal(base_family = "IPAexGothic")+
+  coord_flip()
+L2<-ggplot(PCdata2)+
+  aes(x=reorder(ERA,PC2,FUN = median),
+      y=PC2)+
+  geom_boxplot()+
+  labs(x="時期",
+       y="PC2")+
+  theme_minimal(base_family = "IPAexGothic")+
+  coord_flip()
+L3<-ggplot(PCdata2)+
+  aes(x=reorder(ERA,PC3,FUN = median),
+      y=PC3)+
+  geom_boxplot()+
+  labs(x="時期",
+       y="PC3")+
+  theme_minimal(base_family = "IPAexGothic")+
+  coord_flip()
+#patchworkパッケージによりひとまとめに。
+L1 /L2 /L3
+```
+
+
+口径と主成分分析をプロット
+```{r,fig.width=5, dpi=300}
+Rim<-pca_small2$fac$rim_diamiter
+PCdataRim_s<-data.frame(PC1=b1,PC2=b2,PC3=b3,Rim_diamiter=Rim,ERA=era)
+ggplot(PCdataRim_s,aes(x=Rim_diamiter,y=PC1,color=ERA))+
+  geom_point()+
+  labs(x="口径",
+       y="PC1")+
+  stat_ellipse()+
+  theme_minimal(base_family = "IPAexGothic")
+
+Rim2<-pca_large2$fac$rim_diamiter
+PCdataRim_L<-data.frame(PC1=c1,PC2=c2,PC3=c3,Rim_diamiter=Rim2,ERA=era2)
+ggplot(PCdataRim_L,aes(x=Rim_diamiter,y=PC1,color=ERA))+
+  geom_point()+
+  labs(x="口径",
+       y="PC1")+
+  stat_ellipse()+
+  theme_minimal(base_family = "IPAexGothic")
+```
+
+主成分分析の結果を3次元散布図にプロット。webGLのフォルダに結果が出力されている。
+```{r}
+library(rgl)
+plot3d(PCdata, col=as.integer(PCdata$ERA))
+writeWebGL(width=500, height=550)
+```
 
 ### クラスター分析
 
